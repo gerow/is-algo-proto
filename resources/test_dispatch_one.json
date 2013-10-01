@@ -42,11 +42,13 @@
     {
       "name": "math homework",
       "time": 3600,
+      "priority": 2,
       "due": "2013-10-01T10:00:00"
     },
     {
       "name": "writing assignment",
       "time": 18000,
+      "priority": 10,
       "due": "2013-10-05T14:00:00"
     }
   ]

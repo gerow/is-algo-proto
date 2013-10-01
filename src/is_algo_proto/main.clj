@@ -3,6 +3,11 @@
 
 (require '[is-algo-proto.core :as core])
 
+(defn test-dispatch-one []
+  (core/read-json-file "resources/test_dispatch_one.json"))
+
+(def td (load-test-dispatch-one))
+
 (defn -main
   []
   (println (str (core/read-json-file "resources/test_dispatch_one.json"))))
