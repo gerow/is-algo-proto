@@ -35,6 +35,10 @@
 (defn sorted-schedule [schedule]
   (sort-by #(start-time %1) schedule))
 
+; This function relies on schdeules not overlapping.
+; In order to properly handle this it might be necessary
+; to collapse down any overlapping schdeule events into
+; one.  That, or we can modify this function.
 (defn free-times [dispatch]
   (loop [s (dispatch :schedule) t (start-time dispatch) free ()]
     (if (empty? s)
