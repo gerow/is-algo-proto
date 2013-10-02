@@ -12,10 +12,10 @@
 (defn -main
   [& args]
   (with-command-line args
-    "iScheduler algorithm prototype"
-    [[input i "name of the input dispatch file" "-"]
+    "Usage: isalgo [-f json|svg] -i input.json -o output.json|svg"
+    [[input i "name of the input dispatch file"]
      [format f "output format" "json"]
-     [output o "output filename" "-"]]
+     [output o "output filename"]]
      (let [scheduled-dispatch (core/task-schedule (core/read-json-file input))]
        (case format
         "svg" (core/svg-schedule scheduled-dispatch)

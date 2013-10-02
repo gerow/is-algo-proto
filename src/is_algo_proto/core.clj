@@ -85,7 +85,7 @@
 ; to collapse down any overlapping schdeule events into
 ; one.  That, or we can modify this function.
 (defn free-times [dispatch]
-  (loop [s (sorted-schedule (dispatch :schedule)) t (start-time dispatch) free '()]
+  (loop [s (sorted-schedule (dispatch :schedule)) t (start-time dispatch) free '[]]
     (if (empty? s)
       free
       (if (= t (start-time (first s)))
@@ -95,7 +95,7 @@
           (end-time (first s))
           (conj free {
             :start t
-            :end (end-time (first s))}))))))
+            :end (start-time (first s))}))))))
 
 (defn time-length [s]
   (- (end-time s) (start-time s)))
@@ -111,14 +111,14 @@
 
 (defn task-schedule [dispatch]
   (let [disp (dispatch-times-to-seconds dispatch)]
-    (loop [dispatch (assoc disp :failed '()) free (free-times disp) tasks (sorted-tasks disp)]
+    (loop [dispatch (assoc disp :failed '[]) free (free-times disp) tasks (sorted-tasks disp)]
       (if (empty? tasks)
         dispatch
         (if (or
           ; if we've run out of empty blocks
           (empty? free)
           ; or if we've run past an allowable block for when a task is due (it's overdue)
-          (> (+ ((first free) :start) ((first tasks) :time) ((first tasks) :due))))
+          (> (+ ((first free) :start) ((first tasks) :time)) ((first tasks) :due)))
           (recur (assoc dispatch :failed (conj (dispatch :failed) (first tasks)))
             (free-times dispatch)
             (rest tasks))
