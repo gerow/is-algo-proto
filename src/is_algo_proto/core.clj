@@ -102,20 +102,24 @@
 
 (defn task-schedule [dispatch]
   (let [disp (dispatch-times-to-seconds dispatch)]
-    (loop [dispatch disp free (free-times disp) tasks (sorted-tasks disp)]
+    (loop [dispatch (assoc disp :failed '()) free (free-times disp) tasks (sorted-tasks disp)]
       (if (empty? tasks)
         dispatch
-        (if (<= ((first tasks) :time) (- ((first free) :end) ((first free) :start)))
-          (let [new-disp
-            (merge dispatch
-              {:schedule (conj
-                (dispatch :schedule)
-                (merge (first tasks)
-                  {:start ((first free) :start)
-                   :end (+ ((first free) :start) ((first tasks) :time))
-                   :task true}))})]
-            (recur new-disp (free-times new-disp) (rest tasks)))
-          (recur dispatch (rest free) tasks))))))
+        (if (empty? free)
+          (recur (assoc dispatch :failed (conj (dispatch :failed) (first tasks)))
+            (free-times dispatch)
+            (rest tasks))
+          (if (<= ((first tasks) :time) (- ((first free) :end) ((first free) :start)))
+            (let [new-disp
+              (merge dispatch
+                {:schedule (conj
+                  (dispatch :schedule)
+                  (merge (first tasks)
+                    {:start ((first free) :start)
+                     :end (+ ((first free) :start) ((first tasks) :time))
+                     :task true}))})]
+              (recur new-disp (free-times new-disp) (rest tasks)))
+            (recur dispatch (rest free) tasks)))))))
 
 (defn scaler [domain-min domain-max range-min range-max]
   (fn [val]
