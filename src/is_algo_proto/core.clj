@@ -70,8 +70,8 @@
 
 (defn svg-schedule [dispatch]
   (let [entry-width 400
-        box-height 800
-        s (scaler (start-time dispatch) (end-time dispatch) 0 800)]
+        box-height 2000
+        s (scaler (start-time dispatch) (end-time dispatch) 0 box-height)]
     (emit
       (svg
         (apply group
@@ -85,9 +85,9 @@
                 :fill "#E62E00")
               (dispatch :schedule))
             (map
-              #(-> (text {:x 0 :y (s (start-time %1))} (%1 :name))
-                 (style :fill #"000066"
+              #(-> (text {:x 0 :y (+ (s (start-time %1)) 15)} (%1 :name))
+                 (style :fill "#000066"
                         :font-family "Garamond"
-                        :font-size "75px"
+                        :font-size "15px"
                         :alignment-baseline :middle))
               (dispatch :schedule))))))))
