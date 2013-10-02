@@ -18,5 +18,5 @@
      [output o "output filename"]]
      (let [scheduled-dispatch (core/task-schedule (core/read-json-file input))]
        (case format
-        "svg" (core/svg-schedule scheduled-dispatch)
+        "svg" (spit output (core/svg-schedule scheduled-dispatch))
         "json" (core/scheduled-dispatch-to-json-file scheduled-dispatch output)))))

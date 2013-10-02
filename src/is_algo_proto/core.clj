@@ -67,7 +67,7 @@
 
 (defn time-til-due-factor [due begin-time]
   (let [ttd (- due begin-time)]
-    (time-til-due-fn 5 ttd)))
+    (time-til-due-fn ttd)))
 
 (defn time-to-finish-factor [ttf]
   (time-to-finish-fn ttf))
@@ -163,7 +163,7 @@
                   :fill (if (contains? %1 :task) "#2E2EE6" "#FF0000"))
                 (dispatch :schedule))
               (map
-                #(-> (text {:x 0 :y (+ (s (start-time %1)) 15)} (%1 :name))
+                #(-> (text {:x 0 :y (+ (s (start-time %1)) 8)} (%1 :name))
                    (style :fill "#000000"
                         :font-family "Garamond"
                         :font-size "15px"
