@@ -25,6 +25,9 @@
 (defn read-json-file [filename]
   (json/read-json (slurp filename)))
 
+(defn write-json-file [m filename]
+  (spit filename (json/write-str m)))
+
 (defn to-time [m]
   ; divide by 1000 to convert to seconds
   (/ (tc/to-long (parse (formatters :date-hour-minute-second) m)) 1000))
@@ -56,7 +59,8 @@
 (defn dispatch-times-to-formatted [dispatch]
   (-> (start-end-time-to-formatted dispatch)
     (assoc :schedule (map start-end-time-to-formatted (dispatch :schedule)))
-    (assoc :tasks (map #(assoc %1 :due (to-formatted (%1 :due))) (dispatch :tasks)))))
+    (assoc :tasks (map #(assoc %1 :due (to-formatted (%1 :due))) (dispatch :tasks)))
+    (assoc :failed (map #(assoc %1 :due (to-formatted (%1 :due))) (dispatch :failed)))))
 
 (defn priority-factor [prio]
   (priority-fn prio))
@@ -99,6 +103,11 @@
 (defn sorted-tasks [dispatch]
   (reverse
     (sort-by #(task-importance %1 (dispatch :start)) (dispatch :tasks))))
+
+(defn scheduled-dispatch-to-json-file [dispatch filename]
+  (-> dispatch
+    dispatch-times-to-formatted
+    (write-json-file filename)))
 
 (defn task-schedule [dispatch]
   (let [disp (dispatch-times-to-seconds dispatch)]
