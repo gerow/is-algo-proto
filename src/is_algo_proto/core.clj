@@ -1,5 +1,8 @@
 (ns is-algo-proto.core
-  (:gen-class))
+  (:use [analemma.charts :only [emit-svg xy-plot add-points]]
+    [analemma.svg]
+    [analemma.xml]
+    [clojure.java.io :only [file]]))
 
 (require '[clojure.data.json :as json])
 (use 'clj-time.format)
@@ -40,9 +43,51 @@
 ; to collapse down any overlapping schdeule events into
 ; one.  That, or we can modify this function.
 (defn free-times [dispatch]
-  (loop [s (dispatch :schedule) t (start-time dispatch) free ()]
+  (loop [s (sorted-schedule (dispatch :schedule)) t (start-time dispatch) free ()]
     (if (empty? s)
       free
       (if (= t (start-time (first s)))
         (recur (rest s) (end-time (first s)) free)
         (recur (rest s) (end-time (first s)) (conj free {:start t :end (end-time (first s))}))))))
+
+(defn sorted-tasks [dispatch]
+  (reverse
+    (sort-by #(task-importance %1 (start-time dispatch)) (dispatch :tasks))))
+
+(defn task-schedule [dispatch]
+  (let [free (free-times dispatch) tasks (sorted-tasks dispatch)]))
+
+(defn scaler [domain-min domain-max range-min range-max]
+  (fn [val]
+    (let [dom (- domain-max domain-min)
+          ran (- range-max range-min)]
+      (-> val 
+        (- domain-min)
+        (* ran)
+        (/ dom)
+        (+ range-min)
+        float))))
+
+(defn svg-schedule [dispatch]
+  (let [entry-width 400
+        box-height 800
+        s (scaler (start-time dispatch) (end-time dispatch) 0 800)]
+    (emit
+      (svg
+        (apply group
+          (concat
+            (map
+              #(rect
+                0
+                (s (start-time %1))
+                (- (s (end-time %1)) (s (start-time %1)))
+                entry-width
+                :fill "#E62E00")
+              (dispatch :schedule))
+            (map
+              #(-> (text {:x 0 :y (s (start-time %1))} (%1 :name))
+                 (style :fill #"000066"
+                        :font-family "Garamond"
+                        :font-size "75px"
+                        :alignment-baseline :middle))
+              (dispatch :schedule))))))))
