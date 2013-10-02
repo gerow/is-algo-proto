@@ -8,11 +8,29 @@
 (use 'clj-time.format)
 (require '[clj-time.coerce :as tc])
 
+; MODIFY THESE FUNCTIONS TO CHANGE THE PRIORITY SCHEDULING
+; -------------------------------------------------------
+(defn priority-fn [priority]
+  (* 5 priority))
+
+(defn time-til-due-fn [time-til-due]
+  (if (= time-til-due 0)
+    100000000000
+    (/ 172800 time-til-due)))
+
+(defn time-to-finish-fn [time-to-finish]
+  0)
+; -------------------------------------------------------
+
 (defn read-json-file [filename]
   (json/read-json (slurp filename)))
 
 (defn to-time [m]
-  (tc/to-long (parse (formatters :date-hour-minute-second) m)))
+  ; divide by 1000 to convert to seconds
+  (/ (tc/to-long (parse (formatters :date-hour-minute-second) m)) 1000))
+
+(defn to-formatted [m]
+  (unparse (formatters :date-hour-minute-second) (tc/from-long (* m 1000))))
 
 (defn start-time [m]
   (m :start))
@@ -21,24 +39,34 @@
   (m :end))
 
 (defn start-end-time-to-seconds [start-end-time]
-  (merge start-end-time
-    {:start (to-time (start-end-time :start))
-      :end (to-time (start-end-time :end))}))
+  (-> start-end-time
+    (assoc :start (to-time (start-end-time :start)))
+    (assoc :end (to-time (start-end-time :end)))))
+
+(defn start-end-time-to-formatted [start-end-time]
+  (-> start-end-time
+    (assoc :start (to-formatted (start-end-time :start)))
+    (assoc :end (to-formatted (start-end-time :end)))))
 
 (defn dispatch-times-to-seconds [dispatch]
   (-> (start-end-time-to-seconds dispatch) 
     (assoc :schedule (map start-end-time-to-seconds (dispatch :schedule)))
     (assoc :tasks (map #(assoc %1 :due (to-time (%1 :due))) (dispatch :tasks)))))
 
+(defn dispatch-times-to-formatted [dispatch]
+  (-> (start-end-time-to-formatted dispatch)
+    (assoc :schedule (map start-end-time-to-formatted (dispatch :schedule)))
+    (assoc :tasks (map #(assoc %1 :due (to-formatted (%1 :due))) (dispatch :tasks)))))
+
 (defn priority-factor [prio]
-  (* 5 prio))
+  (priority-fn prio))
 
 (defn time-til-due-factor [due begin-time]
   (let [ttd (- due begin-time)]
-    (* 5 ttd)))
+    (time-til-due-fn 5 ttd)))
 
 (defn time-to-finish-factor [ttf]
-  0)
+  (time-to-finish-fn ttf))
 
 (defn task-importance [task begin-time]
   (+ (priority-factor (task :priority))
@@ -84,7 +112,8 @@
                 (dispatch :schedule)
                 (merge (first tasks)
                   {:start ((first free) :start)
-                   :end (+ ((first free) :start) ((first tasks) :time))}))})]
+                   :end (+ ((first free) :start) ((first tasks) :time))
+                   :task true}))})]
             (recur new-disp (free-times new-disp) (rest tasks)))
           (recur dispatch (rest free) tasks))))))
 
@@ -101,24 +130,25 @@
 
 (defn svg-schedule [dispatch]
   (let [entry-width 400
-        box-height 800 
+        box-height 1000
         s (scaler (start-time dispatch) (end-time dispatch) 0 box-height)]
     (emit
-      (svg
-        (apply group
-          (concat
-            (map
-              #(rect
-                0
-                (s (start-time %1))
-                (- (s (end-time %1)) (s (start-time %1)))
-                entry-width
-                :fill "#E62E00")
-              (dispatch :schedule))
-            (map
-              #(-> (text {:x 0 :y (+ (s (start-time %1)) 15)} (%1 :name))
-                 (style :fill "#000066"
+      (merge-attrs
+        (svg
+          (apply group
+            (concat
+              (map
+                #(rect
+                  0
+                  (s (start-time %1))
+                  (- (s (end-time %1)) (s (start-time %1)))
+                  entry-width
+                  :fill (if (contains? %1 :task) "#2E2EE6" "#FF0000"))
+                (dispatch :schedule))
+              (map
+                #(-> (text {:x 0 :y (+ (s (start-time %1)) 15)} (%1 :name))
+                   (style :fill "#000000"
                         :font-family "Garamond"
                         :font-size "15px"
                         :alignment-baseline :middle))
-              (dispatch :schedule))))))))
+                (dispatch :schedule))))) {:width entry-width :height box-height}))))
