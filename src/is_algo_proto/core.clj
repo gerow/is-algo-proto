@@ -105,7 +105,11 @@
     (loop [dispatch (assoc disp :failed '()) free (free-times disp) tasks (sorted-tasks disp)]
       (if (empty? tasks)
         dispatch
-        (if (empty? free)
+        (if (or
+          ; if we've run out of empty blocks
+          (empty? free)
+          ; or if we've run past an allowable block fo when a task is due (it's overdue)
+          (> (+ ((first free) :start) ((first tasks) :time) ((first tasks) :due))
           (recur (assoc dispatch :failed (conj (dispatch :failed) (first tasks)))
             (free-times dispatch)
             (rest tasks))
