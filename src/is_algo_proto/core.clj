@@ -15,16 +15,26 @@
   (tc/to-long (parse (formatters :date-hour-minute-second) m)))
 
 (defn start-time [m]
-  (to-time (m :start)))
+  (m :start))
 
 (defn end-time [m]
-  (to-time (m :end)))
+  (m :end))
+
+(defn start-end-time-to-seconds [start-end-time]
+  (merge start-end-time
+    {:start (to-time (start-end-time :start))
+      :end (to-time (start-end-time :end))}))
+
+(defn dispatch-times-to-seconds [dispatch]
+  (-> (start-end-time-to-seconds dispatch) 
+    (assoc :schedule (map start-end-time-to-seconds (dispatch :schedule)))
+    (assoc :tasks (map #(assoc %1 :due (to-time (%1 :due))) (dispatch :tasks)))))
 
 (defn priority-factor [prio]
   (* 5 prio))
 
 (defn time-til-due-factor [due begin-time]
-  (let [ttd (- (to-time due) (to-time begin-time))]
+  (let [ttd (- due begin-time)]
     (* 5 ttd)))
 
 (defn time-to-finish-factor [ttf]
@@ -43,19 +53,40 @@
 ; to collapse down any overlapping schdeule events into
 ; one.  That, or we can modify this function.
 (defn free-times [dispatch]
-  (loop [s (sorted-schedule (dispatch :schedule)) t (start-time dispatch) free ()]
+  (loop [s (sorted-schedule (dispatch :schedule)) t (start-time dispatch) free '()]
     (if (empty? s)
       free
       (if (= t (start-time (first s)))
         (recur (rest s) (end-time (first s)) free)
-        (recur (rest s) (end-time (first s)) (conj free {:start t :end (end-time (first s))}))))))
+        (recur
+          (rest s)
+          (end-time (first s))
+          (conj free {
+            :start t
+            :end (end-time (first s))}))))))
+
+(defn time-length [s]
+  (- (end-time s) (start-time s)))
 
 (defn sorted-tasks [dispatch]
   (reverse
-    (sort-by #(task-importance %1 (start-time dispatch)) (dispatch :tasks))))
+    (sort-by #(task-importance %1 (dispatch :start)) (dispatch :tasks))))
 
 (defn task-schedule [dispatch]
-  (let [free (free-times dispatch) tasks (sorted-tasks dispatch)]))
+  (let [disp (dispatch-times-to-seconds dispatch)]
+    (loop [dispatch disp free (free-times disp) tasks (sorted-tasks disp)]
+      (if (empty? tasks)
+        dispatch
+        (if (<= ((first tasks) :time) (- ((first free) :end) ((first free) :start)))
+          (let [new-disp
+            (merge dispatch
+              {:schedule (conj
+                (dispatch :schedule)
+                (merge (first tasks)
+                  {:start ((first free) :start)
+                   :end (+ ((first free) :start) ((first tasks) :time))}))})]
+            (recur new-disp (free-times new-disp) (rest tasks)))
+          (recur dispatch (rest free) tasks))))))
 
 (defn scaler [domain-min domain-max range-min range-max]
   (fn [val]
@@ -70,7 +101,7 @@
 
 (defn svg-schedule [dispatch]
   (let [entry-width 400
-        box-height 2000
+        box-height 800 
         s (scaler (start-time dispatch) (end-time dispatch) 0 box-height)]
     (emit
       (svg

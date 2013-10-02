@@ -11,4 +11,4 @@
 (defn -main
   []
   ;(println (str (core/read-json-file "resources/test_dispatch_one.json"))))
-  (println (core/svg-schedule td)))
+  (println (core/svg-schedule (core/task-schedule td))))
