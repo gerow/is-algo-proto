@@ -140,7 +140,8 @@
       (assoc :priority-factor (priority-factor (%1 :priority)))
       (assoc :time-til-due-factor (time-til-due-factor (%1 :due) (dispatch :start)))
       (assoc :time-to-finish-factor (time-to-finish-factor (%1 :time)))
-      (assoc :true-priority (task-importance %1 (dispatch :start))))
+      (assoc :true-priority (task-importance %1 (dispatch :start)))
+      (assoc :due (to-formatted (%1 :due))))
     (dispatch :tasks))))
 
 (defn scaler [domain-min domain-max range-min range-max]
