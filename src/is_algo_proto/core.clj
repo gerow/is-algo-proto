@@ -11,12 +11,12 @@
 ; MODIFY THESE FUNCTIONS TO CHANGE THE PRIORITY SCHEDULING
 ; -------------------------------------------------------
 (defn priority-fn [priority]
-  (* 5 priority))
+  priority)
 
 (defn time-til-due-fn [time-til-due]
   (if (= time-til-due 0)
     100000000000
-    (/ 172800 time-til-due)))
+    (* 4 (/ 172800 time-til-due))))
 
 (defn time-to-finish-fn [time-to-finish]
   0)
@@ -133,6 +133,15 @@
                      :task true}))})]
               (recur new-disp (free-times new-disp) (rest tasks)))
             (recur dispatch (rest free) tasks)))))))
+
+(defn debug-priorities [dispatch]
+  (assoc dispatch :tasks (map
+    #(-> %1
+      (assoc :priority-factor (priority-factor (%1 :priority)))
+      (assoc :time-til-due-factor (time-til-due-factor (%1 :due) (dispatch :start)))
+      (assoc :time-to-finish-factor (time-to-finish-factor (%1 :time)))
+      (assoc :true-priority (task-importance %1 (dispatch :start))))
+    (dispatch :tasks))))
 
 (defn scaler [domain-min domain-max range-min range-max]
   (fn [val]
