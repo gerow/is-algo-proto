@@ -8,4 +8,5 @@
                  [clj-time "0.6.0"]
                  [tikkba "0.4.0"]
                  [org.clojure/clojure-contrib "1.2.0"]]
-  :main is-algo-proto.main)
+  :main is-algo-proto.main
+  :keep-non-project-classes true)

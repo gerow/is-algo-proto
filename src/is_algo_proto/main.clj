@@ -4,11 +4,6 @@
 
 (require '[is-algo-proto.core :as core])
 
-(defn test-dispatch-one []
-  (core/read-json-file "resources/test_dispatch_one.json"))
-
-(def td (test-dispatch-one))
-
 (defn -main
   [& args]
   (with-command-line args
