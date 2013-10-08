@@ -10,19 +10,19 @@ The utility takes in a json file called a dispatch. It should have a format like
 
 assuming 'is-algo.jar' is the name of your jar file, you can use it as follows
 
-  java -jar is-algo.jar -i <input_dispatch.json> -o <output_scheduled.json>
+  java -jar is-algo.jar -i input_dispatch.json -o output_scheduled.json
 
 This will generate a json file similar to the input one except with the tasks specified placed into the schedule.  If the tasks could not be placed in the schedule they will be in an array at the "failed" key.
 
 In addition, you can output to an svg so you can visualize the way that tasks are scheduled like so:
 
-  java -jar is-algo.jar -i <input_dispatch.json> -o <output_image.svg> -f svg
+  java -jar is-algo.jar -i input_dispatch.json -o output_image.svg -f svg
 
 The resulting svg can be best viewed using a web browser of your choice.
 
 Finally, can can get the raw priority values of the tasks to dump to a json file like so:
 
-  java -jar is-algo.jar -i <input_dispatch.json> -o <output_dump.json> -p
+  java -jar is-algo.jar -i input_dispatch.json -o output_dump.json -p
 
 ## License
 
